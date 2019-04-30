@@ -52,6 +52,7 @@ digitalWrite (ln3, LOW);
 
 void loop() {
 
+ 
 if(oto==0)
     {
 		hizal();
@@ -61,15 +62,19 @@ if(oto==0)
 	    bul();
 	}
 //mod değişim butonu 
-	 mbut = digitalRead(b3);
+mbut = digitalRead(b3);
 if(mbut==HIGH){
   if(oto!=0)
   {oto=0;
     lcd.clear();
-  lcd.print("otomatik mod etkin"); }
+  lcd.print("otomatik mod etkin"); 
+ Serial.println("otomatik mod");
+}
   else {oto=1;
     lcd.clear();
-  lcd.print("manuel mod etkin"); }
+  lcd.print("manuel mod etkin"); 
+ Serial.println("mauel mod");
+}
   while(mbut == HIGH){
   dbut = digitalRead(b3);
   }
@@ -103,32 +108,32 @@ delay(10);
 hiz=mothiz*sabit;
 		if (hiz>=limit[0] or hiz<=limit[1])
 		{
-		 vites=1;
-		 gvites=vites;
+		 
+		 gvites=1;
 		 otovites(gvites);
 		}
 		else if (hiz>=limit[2] or hiz<=limit[3])
 		{
-		vites=2;
-		 gvites=vites;
+		
+		 gvites=2;
 		 otovites(gvites);	
 		}
 		else if (hiz>=limit[4] or hiz<=limit[5])
 		{
-		vites=3;
-		 gvites=vites;
+		
+		 gvites=3;
 		 otovites(gvites);	
 		}
 		else if (hiz>=limit[6] or hiz<=limit[7])
 		{
-		vites=4;
-		 gvites=vites;
+		
+		 gvites=4;
 		 otovites(gvites);	
 		}
 		else if (hiz>=limit[8] or hiz<=limit[9])
 		{
-		vites=5;
-		 gvites=vites;
+		
+		 gvites=5;
 		 otovites(gvites);	
 		}
 	
