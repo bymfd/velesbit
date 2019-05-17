@@ -1,6 +1,10 @@
+
+#include <Rotary.h>
+Rotary r = Rotary(2, 3);
 int oto=1;
 int ln3 =6;
 int ln4 =5;
+unsigned char result;
 const int butondur =11;
 const int butonpin =7;
 const int vazb =2;
@@ -11,10 +15,11 @@ int buton=0;
 int vaz=0;
 int vart=0;
 int buta=0;
-int vites2=5;
-int vites3=11;
-int vites4=17;
-int vites5=23;
+int vtur[5] = {0,5,11,17,23};  // vites tur sınırları 
+//int vites2=5;
+//int vites3=11;
+//int vites4=17;
+//int vites5=23;
 
 int first=0;
 #define reed 8//pin connected to read switch
@@ -33,7 +38,7 @@ int reedCounter;
 
 
 void setup() {
-
+ r.begin(true);
 Serial.begin(9600);
   Serial.println("-----------------------------------------------------------------*************----------------------------------");
   // TIMER SETUP- the timer interrupt allows preceise timed measurements of the reed switch
@@ -160,6 +165,8 @@ void loop() {
  buta = digitalRead(butondur);
 if(buta==HIGH){
   dur();
+  vites=1;
+  tur=0;
 }
 if (oto==1){
   Serial.println("hizal");
@@ -298,10 +305,10 @@ void vitesbul(){
   
   
 if(vites==1){
-  if(tur<0){
+  if(tur<vtur[0] and pedal()==true){
     sag();
   }
-  else if(tur>0){
+  else if(tur>vtur[0] and pedal()==true){
     sol(); 
   }
   else{
@@ -311,10 +318,10 @@ if(vites==1){
 }
 //-----------------------
 if(vites==2){
-  if(tur<vites2){
+  if(tur<vtur[1] and pedal()==true){
     sag();
   }
-  else if(tur>vites2){
+  else if(tur>vtur[1] and pedal()==true){
     sol(); 
   }
   else{
@@ -324,10 +331,10 @@ if(vites==2){
 }
 //-----------------------
 if(vites==3){
-  if(tur<vites3){
+  if(tur<vtur[2] and pedal()==true){
     sag();
   }
-  else if(tur>vites3){
+  else if(tur>vtur[2] and pedal()==true){
     sol(); 
   }
   else{
@@ -337,10 +344,10 @@ if(vites==3){
 }
 //------------------------
 if(vites==4){
-  if(tur<vites4){
+  if(tur<vtur[3] and pedal()==true){
     sag();
   }
-  else if(tur>vites4){
+  else if(tur>vtur[3] and pedal()==true){
     sol(); 
   }
   else{
@@ -350,10 +357,10 @@ if(vites==4){
 }
 //------------------------
 if(vites==5){
-  if(tur<vites5){
+  if(tur<vtur[4] and pedal()==true){
     sag();
   }
-  else if(tur>vites5){
+  else if(tur>vtur[4] and pedal()==true){
     sol(); 
   }
   else{
@@ -364,5 +371,18 @@ if(vites==5){
   
 
   }
+  
+boolean pedal(){
+
+ result = r.process();
+  if (result) {
+    return true;
+  }
+ else {
+ 
+ return false;
+ }
+
+}
 
 

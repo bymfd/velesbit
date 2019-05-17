@@ -3,7 +3,7 @@ bool pyon=true;//pedal yönü kontrol değişkeni
 int g=1;       //vites aktarımı için gidilmesi gerekn vites değişken tutucusu
 int tur = 0;  //motorun kaç tur döndüğünü tutan değişken
 int abut,ibut,dbut,mothiz,tbut,mbut; //butonlar ve diğer sensorler için kullanılan geçici değişkenler
-
+int oto=0;
 int vites=1;  //global vites tutucusu
 
 
@@ -24,10 +24,10 @@ float circumference;
 
 int maxReedCounter = 100;//min time (in ms) of one rotation (for debouncing)
 int reedCounter;
-
+int oku=11;
 
 void setup(){
-  
+  pinMode(oku, INPUT);
   reedCounter = maxReedCounter;
   circumference = 2*3.14*radius;
   pinMode(1,OUTPUT);//tx
@@ -87,12 +87,26 @@ ISR(TIMER1_COMPA_vect) {//Interrupt at freq of 1kHz to measure reed switch
 
 
 void loop(){
-
+  Serial.println("loop");
   delay(1000);
-  
-   Serial.print("looop a döndümm");
-  hizal();
+  if(Serial.readString()=="1"){
+  oto=1;
+ hizal();
+  }else {
+  // Serial.println("MANUEL");
+  oto=0;
+  manuel();
+  }
 }
+
+void manuel(){
+
+Serial.println("manuel");
+
+
+}
+
+
 void hizal(){
   Serial.print("merkez urasi hizal");
 if(say==0 and mph<=69){
