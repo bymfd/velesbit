@@ -1,282 +1,368 @@
-#include <LiquidCrystal.h>
-const int rs = 12, en = 10, d4 = A3, d5 = A2, d6 = A1, d7 = A0;
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
-bool pyon=false; //pedal yönü değişkeni
-int hiz=0;         //rpm 
-float sabit=0.33;//step motordann alınan veriyi km/s e çevirmek için sabit çarpan 
-int hizpin=A0;
-int oto=0;      // otomatik mod kontrol değişkeni oto mod =0
-int limit[9] = {1,15,16,30,31,45,46,50,51};  // vites hız sınırları 
-			//       | 1 ||  2 ||  3 || 4 || 5|
-int g=1;
-int tur = 0;    //tel asılma sistemi üzerindeki butonun dönüşünü tutan sayaç
-int abut,ibut,dbut,mothiz,tbut,mbut;
-int ln3 =2;//motor 1.pim
-int ln4 =3;//mootor2.pin
-
-const int b4=7;//tur butonu tbut
-const int b1 =8;//manuel vites -
-const int b2 =10;//manuel vites +
-const int b0 =11;//durdurma butonu dbut
-const int b3 =12;//mod butonu mbut
+int oto=1;
+int ln3 =6;
+int ln4 =5;
+const int butondur =11;
+const int butonpin =7;
+const int vazb =2;
+const int vartb =4;
+int tur=0;
 int vites=1;
-int gvites=0;
-
-void setup() {
-pinMode (hizpin,INPUT);
-pinMode (ln3 ,OUTPUT);
-pinMode (ln4 ,OUTPUT);
-pinMode (b0,INPUT);
-pinMode (b1,INPUT);
-pinMode (b2,INPUT);
-pinMode (b3,INPUT);
-pinMode (b4,INPUT);
-Serial.begin(9600);
-lcd.begin(16, 4);
-//motoru birinci vitese çekme 
- dbut = digitalRead(b0);
- while(dbut == LOW){//sınır butonu 1 olana kadar çalışacağı için başa gelmek zorunda
-digitalWrite (ln4, HIGH);
-digitalWrite (ln3, LOW);
- dbut = digitalRead(b0);
-  }//motoru durdur 
- digitalWrite (ln4, LOW);
-digitalWrite (ln3, LOW); 
-//lcd ile bilgi ver 
-  lcd.clear();
-  lcd.print("otomatik mod etkin"); 
- lcd.setCursor(0,4);
-     lcd.println("kaskinizi takin");
-}
-
-
-void loop() {
-
- 
-if(oto==0)
-    {
-		hizal();
-	}
-	else
-	{	
-	    bul();
-	}
-//mod değişim butonu 
-mbut = digitalRead(b3);
-if(mbut==HIGH){
-  if(oto!=0)
-  {oto=0;
-    lcd.clear();
-  lcd.print("otomatik mod etkin"); 
- Serial.println("otomatik mod");
-}
-  else {oto=1;
-    lcd.clear();
-  lcd.print("manuel mod etkin"); 
- Serial.println("mauel mod");
-}
-  while(mbut == HIGH){
-  dbut = digitalRead(b3);
-  }
- }
-
-}
-bool pedal(){
-  
-  return(true);
-  }
-//vitesin artılıp azaltılacağını belirleme
-void otovites(int gvites){
-	
-	if (vites==gvites)
-	{
-		loop();
-	}
-	else if (vites<gvites)
-	{
-		sol(gvites);
-	}
-	else if (vites>gvites)
-	{
-		sag(gvites);
-	}		
-} 
- //otomatik vites değiştirmek için hız alma ve hız aralıklarına bağlı vites kararı
-void hizal(){		
-mothiz = analogRead(hizpin);
-delay(10);
-hiz=mothiz*sabit;
-		if (hiz>=limit[0] or hiz<=limit[1])
-		{
-		 
-		 gvites=1;
-		 otovites(gvites);
-		}
-		else if (hiz>=limit[2] or hiz<=limit[3])
-		{
-		
-		 gvites=2;
-		 otovites(gvites);	
-		}
-		else if (hiz>=limit[4] or hiz<=limit[5])
-		{
-		
-		 gvites=3;
-		 otovites(gvites);	
-		}
-		else if (hiz>=limit[6] or hiz<=limit[7])
-		{
-		
-		 gvites=4;
-		 otovites(gvites);	
-		}
-		else if (hiz>=limit[8] or hiz<=limit[9])
-		{
-		
-		 gvites=5;
-		 otovites(gvites);	
-		}
-	
-} 
-
-
- 
- //vites artırmak için tur hesabı
-int sayi()
-{
-tbut = digitalRead(b4);
- tbut = digitalRead(b4);
-if(tbut==1){
- delay(10);
- tur ++;
- lcd.setCursor(0,4);
-     lcd.print(tur);
-     lcd.println(". tur");
-  while(tbut == HIGH){
-     tbut = digitalRead(b4);
-  }
- delay(10);
-}
-    return(tur);
-  }
-
-  
- //vites düşürmek için tur hesabı 
-int sayi2(){
-   tbut = digitalRead(b4);
-if(tbut==1){
- delay(10);
- tur --;
- lcd.setCursor(0,4);
-     lcd.print(tur);
-     lcd.println(". tur");
-  while(tbut == HIGH){
-     tbut = digitalRead(b4);
-  }
- delay(10);
-}
-    return(tur);
-}
-
-//manuel vites değiştirme kararı
-void bul(){
-  abut = digitalRead(b1);
-  ibut = digitalRead(b2);
-//artırma butonuna basma denetim başı
-//---------------------------------
-  if (abut == HIGH) {
-     delay(20);
-  while(abut == HIGH){ 
-   abut= digitalRead(b1); 
-   delay(10);
-   }
-     if(vites!=1 and vites>1){
-        vites --;
-      }
-     else {
-    vites=1;
-    } 
-   gvites=vites;
-   sol(gvites);
- }
-//artırma butonuna basma denetim sonu
-//-------------------------------
-//düşürme butonuna basma denetim başı
-//----------------------------------
-  if (ibut == HIGH) {
- ibut = digitalRead(b2);
-     delay(20);
-while(ibut == HIGH){ 
-     ibut= digitalRead(b2); 
-     delay(10);
-     }
-    if(vites!=5 and vites<5){
-       vites ++;
-       }
- else {
-  vites=5;
- }
-     gvites=vites;
-     sag(gvites); 
- }
-//düşürme denetim sonu
-//------------------------
-   }
-
-//vitesler arasındaki tur sayıları ve sisteme bildirmek için değiken ataması
-int hesaplar(){
-int vites1=0;
+int buton=0;
+int vaz=0;
+int vart=0;
+int buta=0;
 int vites2=5;
 int vites3=11;
 int vites4=17;
 int vites5=23;
 
-if(gvites==1){
-  g=vites1;
-  }
- else if(gvites==2){
-  g=vites2;
-  }
- else if(gvites==3){
-  g=vites3;
-  }
- else if(gvites==4){
-  g=vites4;
-  }
- else if(gvites==5){
-  g=vites5;
-  }
-return g;
+int first=0;
+#define reed 8//pin connected to read switch
+
+float radius = 20.0;// tire radius (in inches)- CHANGE THIS FOR YOUR OWN BIKE
+float limit[8] = {0.00,8.00,8.01,15.00,15.01,22.00,22.01,30.00};  // vites hız sınırları 
+int reedVal,say;
+float mphh=0.00;
+float hiz=0.00;
+long timer = 0;// time between one full rotation (in ms)
+float mph = 0.00;
+float circumference;
+int maxReedCounter = 100;//min time (in ms) of one rotation (for debouncing)
+int reedCounter;
+
+
+
+void setup() {
+
+Serial.begin(9600);
+  Serial.println("-----------------------------------------------------------------*************----------------------------------");
+  // TIMER SETUP- the timer interrupt allows preceise timed measurements of the reed switch
+  //for mor info about configuration of arduino timers see http://arduino.cc/playground/Code/Timer1
+  cli();//stop interrupts
+
+  //set timer1 interrupt at 1kHz
+  TCCR1A = 0;// set entire TCCR1A register to 0
+  TCCR1B = 0;// same for TCCR1B
+  TCNT1  = 0;
+  // set timer count for 1khz increments
+  OCR1A = 1999;// = (1/1000) / ((1/(16*10^6))*8) - 1
+  // turn on CTC mode
+  TCCR1B |= (1 << WGM12);
+  // Set CS11 bit for 8 prescaler
+  TCCR1B |= (1 << CS11);   
+  // enable timer compare interrupt
+  TIMSK1 |= (1 << OCIE1A);
+  
+  sei();//allow interrupts
+
+  //END TIMER SETUP
+
+
+  
+  reedCounter = maxReedCounter;
+  circumference = 2*3.14*radius;
+  pinMode(1,OUTPUT);//tx
+pinMode (ln3 ,OUTPUT);
+pinMode (ln4 ,OUTPUT);
+pinMode (butonpin,INPUT);
+pinMode (vazb,INPUT);
+pinMode (vartb,INPUT);
+pinMode (butondur,INPUT);
+//Serial.begin(9600);
+buta = digitalRead(butondur);
+
+//while(digitalRead(buta) ==HIGH){//sınır butonu 1 olana kadar çalışacağı için başa gelmek zorunda
+//  Serial.println("stop butonuna basana kadar");
+//digitalWrite (ln4, HIGH);
+//digitalWrite (ln3, LOW);
+// buta = digitalRead(butondur);
+//  }//motoru durdur 
+//digitalWrite (ln4, LOW);
+//digitalWrite (ln3, LOW); 
+//delay(100);
+//  Serial.println("stop durdu");
+////lcd ile bilgi ver 
+// // lcd.clear();
+//  //lcd.print("otomatik mod etkin"); 
+//// lcd.setCursor(0,4);
+//  //   lcd.println("kaskinizi takin");
+// digitalWrite (ln4, LOW);
+//digitalWrite (ln3, HIGH);
+//delay(100);
+// digitalWrite (ln4, LOW);
+//digitalWrite (ln3, LOW); 
+//delay(1);
+//  Serial.println("bitti");
+
+pinMode (ln3 ,OUTPUT);
+pinMode (ln4 ,OUTPUT);
+
+delay(2000);
+sol();
+while (first==0){
+ buta = digitalRead(butondur);
+if(buta==HIGH){
+  dur();
+//  lcd.clear();
+  //lcd.print("BASMAA"); 
+    vites=0;
+  sag();
+  delay(200);
+  dur();
+  tur=0;
+  first=1;
 }
-//vites artırmak için motor hareket kodları
-void sag(int gvites){
-  g=hesaplar();  
-  if(pedal()){//pedal saat yönünde dönüyorsa devam et
-  while (g>=sayi())             //tur tamamlanana kadar motora güç ver
-  {
-    digitalWrite (ln3, HIGH);
-    digitalWrite (ln4, LOW);
-  }}
-dur();
 }
 
-//vitesdüşürmek için motor hareket kodları
-void sol(int gvites){
-  g=hesaplar();
-  if(pedal()){//pedal saat yönünde dönüyorrsa devam et
-  while(g<=sayi2())                 //tur tamamlanana kadar motora güç ver
-   {
-    digitalWrite (ln4, HIGH);
-    digitalWrite (ln3, LOW);  
-    }}
-dur();
+ 
 }
-//motor harekeetini durdurmak için
-void dur()
-{
+
+
+ISR(TIMER1_COMPA_vect) {
+   // Serial.println("hiz alma zimbirtisi");
+  //Interrupt at freq of 1kHz to measure reed switch
+  reedVal = digitalRead(reed);//get val of A0
+  if (reedVal){//if reed switch is closed
+    if (reedCounter == 0){//min time between pulses has passed
+      mph = (56.8*float(circumference))/float(timer);//calculate miles per hour
+      timer = 0;//reset timer
+      reedCounter = maxReedCounter;//reset reedCounter
+    }
+    else{
+      if (reedCounter > 0){//don't let reedCounter go negative
+        reedCounter -= 1;//decrement reedCounter
+      }
+    }
+  }
+  else{//if reed switch is open
+    if (reedCounter > 0){//don't let reedCounter go negative
+      reedCounter -= 1;//decrement reedCounter
+    }
+  }
+  if (timer > 2000){
+    mph = 0;//if no new pulses from reed switch- tire is still, set mph to 0
+  }
+  else{
+    timer += 1;//increment timer
+  }
+  //  Serial.println("hizal zimbirtisi sonu"); 
+}
+
+
+
+
+
+
+
+
+void loop() {
+//-----------------------------------------
+ buta = digitalRead(butondur);
+if(buta==HIGH){
+  dur();
+}
+if (oto==1){
+  Serial.println("hizal");
+  hizal();
+  
+  }
+  else{
+
+ vart = digitalRead(vartb);
+
+if(vart==1 and vites < 5){
+  delay(100);
+  vites ++;
+
+  while(vart == HIGH){
+     vart = digitalRead(vartb);
+  }
+  delay(100);
+}
+//-------------------------------------------
+ vaz = digitalRead(vazb); 
+if(vaz==1 and vites>1){
+  delay(100);
+  vites --;
+
+  while(vaz == HIGH){
+     vaz = digitalRead(vazb);
+  }
+  delay(100);
+}}
+//--------------------------------------------
+
+
+}
+
+void sag(){
+    Serial.println("sag");
+  digitalWrite (ln3, HIGH);
+  digitalWrite (ln4, LOW);
+  buton = digitalRead(butonpin); 
+if(buton==1){
+ delay(10);
+ tur ++;
+
+  while(buton == HIGH){
+     buton = digitalRead(butonpin);
+  }
+ delay(10);
+}
+}
+
+void sol(){
+    Serial.println("sol");
+  digitalWrite (ln4, HIGH);
+  digitalWrite (ln3, LOW);
+  buton = digitalRead(butonpin); 
+if(buton==1){
+ delay(10);
+ tur --;
+
+  while(buton == HIGH){
+     buton = digitalRead(butonpin);
+  }
+ delay(10);
+}
+}
+
+void dur(){
+    Serial.println("dur");
   digitalWrite (ln4, LOW);
   digitalWrite (ln3, LOW);
-//moda göre geldiği yere dönme 
-if (oto!=0){bul();}
-else{hizal();}
+
 }
+
+void hizal(){
+
+
+
+  
+ //   Serial.println(limit[1]);
+hiz=mph;
+
+
+   Serial.println("Speed =");
+  Serial.println(mph);
+     Serial.print("vites =");
+  Serial.println(vites);
+  
+    if (hiz>=limit[0] and hiz<=limit[1])
+    {
+
+     vites=1; 
+    vitesbul(); 
+    
+    
+    }
+    else if (hiz>=limit[2] and hiz<=limit[3])
+    {
+
+     vites=2; 
+     vitesbul(); 
+     
+    }
+    else if (hiz>=limit[4] and hiz<=limit[5])
+    {
+
+     vites=3;
+     vitesbul(); 
+  
+    }
+    else if (hiz>=limit[6] and hiz<=limit[7])
+    {
+   
+     vites=4;
+     vitesbul(); 
+
+    }
+    else if (hiz>=limit[8])
+    {
+       
+     vites=5;
+     vitesbul(); 
+
+    }
+   
+    else {vites=vites;
+
+    Serial.println("gvites else");
+    }
+  
+
+
+}
+
+void vitesbul(){
+  
+  
+if(vites==1){
+  if(tur<0){
+    sag();
+  }
+  else if(tur>0){
+    sol(); 
+  }
+  else{
+    dur();
+
+  }
+}
+//-----------------------
+if(vites==2){
+  if(tur<vites2){
+    sag();
+  }
+  else if(tur>vites2){
+    sol(); 
+  }
+  else{
+    dur();
+
+  }
+}
+//-----------------------
+if(vites==3){
+  if(tur<vites3){
+    sag();
+  }
+  else if(tur>vites3){
+    sol(); 
+  }
+  else{
+    dur();
+   
+  }
+}
+//------------------------
+if(vites==4){
+  if(tur<vites4){
+    sag();
+  }
+  else if(tur>vites4){
+    sol(); 
+  }
+  else{
+    dur();
+    
+  }
+}
+//------------------------
+if(vites==5){
+  if(tur<vites5){
+    sag();
+  }
+  else if(tur>vites5){
+    sol(); 
+  }
+  else{
+    dur();
+    
+  }
+}
+  
+
+  }
+
+
