@@ -7,7 +7,7 @@ int ln4 =5;
 unsigned char result;
 const int butondur =11;
 const int butonpin =7;
-const int vazb =2;
+const int vazb =9;
 const int vartb =4;
 int tur=0;
 int vites=1;
@@ -165,11 +165,21 @@ void loop() {
  buta = digitalRead(butondur);
 if(buta==HIGH){
   dur();
+  sag();// result = r.process();
+//  if (result) {
+//    Serial.println("true");
+//    return true;
+//  }
+// else {
+// Serial.println("false");
+// return false;
+// }
+  delay(200);
   vites=1;
   tur=0;
 }
-if (oto==1){
-  Serial.println("hizal");
+if (oto==0){
+  //Serial.println("hizal");
   hizal();
   
   }
@@ -178,25 +188,35 @@ if (oto==1){
  vart = digitalRead(vartb);
 
 if(vart==1 and vites < 5){
+   Serial.println("vart");
   delay(100);
   vites ++;
+  Serial.println(vites);
+   vitesbul();
 
   while(vart == HIGH){
      vart = digitalRead(vartb);
   }
   delay(100);
+ 
 }
 //-------------------------------------------
  vaz = digitalRead(vazb); 
 if(vaz==1 and vites>1){
+   Serial.println("vazb");
   delay(100);
   vites --;
-
+  vitesbul();
+    
+ Serial.println(vites);
   while(vaz == HIGH){
      vaz = digitalRead(vazb);
   }
   delay(100);
-}}
+
+}
+
+}
 //--------------------------------------------
 
 
@@ -210,7 +230,7 @@ void sag(){
 if(buton==1){
  delay(10);
  tur ++;
-
+   Serial.println(tur);
   while(buton == HIGH){
      buton = digitalRead(butonpin);
   }
@@ -226,7 +246,7 @@ void sol(){
 if(buton==1){
  delay(10);
  tur --;
-
+   Serial.println(tur);
   while(buton == HIGH){
      buton = digitalRead(butonpin);
   }
@@ -374,14 +394,15 @@ if(vites==5){
   
 boolean pedal(){
 
- result = r.process();
-  if (result) {
-    return true;
-  }
- else {
- 
- return false;
- }
+// result = r.process();
+//  if (result) {
+//    Serial.println("true");
+//    return true;
+//  }
+// else {
+// Serial.println("false");
+return true;
+// }
 
 }
 
