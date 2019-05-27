@@ -1,7 +1,7 @@
 
 #include <Rotary.h>
 Rotary r = Rotary(2, 3);
-int oto=1;
+int oto=12;
 int ln3 =6;
 int ln4 =5;
 unsigned char result;
@@ -73,6 +73,7 @@ pinMode (butonpin,INPUT);
 pinMode (vazb,INPUT);
 pinMode (vartb,INPUT);
 pinMode (butondur,INPUT);
+pinMode (oto,INPUT);
 //Serial.begin(9600);
 buta = digitalRead(butondur);
 
@@ -178,7 +179,9 @@ if(buta==HIGH){
   vites=1;
   tur=0;
 }
-if (oto==0){
+
+
+if (digitalRead(oto)==1){
   //Serial.println("hizal");
   hizal();
   
