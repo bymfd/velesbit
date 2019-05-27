@@ -32,17 +32,16 @@ int vart=0; //vites artırma butonunun ilk halinin LOW kabul edilmesi için değ
 int buta=0; // vites sınır butonunun ilk halinin LOW kabul edilmesi için değiken ataması
 int vtur[5] = {0,5,11,17,23};  // vites tur sınırları 
 int first=0; //vitesin bir kez başa çakilmesi için while kırma değişkeni
-#define reed 8//pin connected to read switch
+#define reed 8//hall effect kontrol pini 
 
 float radius = 20.0;// teker inch'i  hız ölçülecek teker boyutu 20.00"
 float limit[8] = {0.00,8.00,8.01,15.00,15.01,22.00,22.01,30.00};  // vites hız sınırları 
 int reedVal; // hız hesabı için hall effect sensor durumu tutucu değişkeni
 float hiz=0.00; //hız değikeni
-long timer = 0;// time between one full rotation (in ms)
+long timer = 0;// bir tam tur değişkeni
 float circumference; //teker çevre hesabı tutucusu
 int maxReedCounter = 100;// bir dönüşün minimum süresi
 int reedCounter; // hall efect sayacı
-
 
 
 void setup() {
@@ -155,12 +154,6 @@ ISR(TIMER1_COMPA_vect) {
   }
 
 }
-
-
-
-
-
-
 
 
 void loop() {
