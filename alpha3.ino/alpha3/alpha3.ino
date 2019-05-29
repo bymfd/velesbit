@@ -6,7 +6,6 @@ test aşamasında sistem kontrolü kolaylığı sağlaması için kullanılmış
 lazım olma ihtimlaine karşın yorum satırına alınmıştır.
 
 kullanılan kütüphaneler :
-Rotary :https://github.com/brianlow/Rotary
 LCD :https://github.com/johnrickman/LiquidCrystal_I2C
 
 */
@@ -14,16 +13,19 @@ LCD :https://github.com/johnrickman/LiquidCrystal_I2C
 #include <LiquidCrystal_I2C.h> // lcd ekran için gerekli kütüphane içe aktarma
 LiquidCrystal_I2C lcd(0x27, 16, 2); // lcd ekran adreslenmesi ve boyutlarının belirlenmesi
 
-#include <Rotary.h> // Rotary encoder ile pedal yönü kontrolü için gerekli kütüphane içe aktarılıyor
-Rotary r = Rotary(2, 3); // rotary nesnesi oluşturulup 2 ve 3. pinlerin kontrol edileceği belirtiliyor
+
+ #define outputA 2 //rotary encoder 1.pin
+ #define outputB 3 //rotary encoder 2.pin
+ int aState; //rot şuan ki durumu
+ int aLastState;  //rotun bir önceki durumu
 int oto=12; // otomatik manuel mod değişimi sağlayan buton pini
 int ln3 =6; // l298n sürücüsü için kullanılan pinlerin belirlenmesi
 int ln4 =5; //l298n sürücüsü için kullanılan pinlerin belirlenmesi
-unsigned char result;  // rotary kütüphanesinde kullanılan rotun yönünün tutulduğu değişken 
 const int butondur =11; // vites sınır butonunun pini
 const int butonpin =7; // tur sayma için kullanılan butonun pini
 const int vazb =9; // vites azaltma için kullanılan pini
 const int vartb =4; // vites artırma için kullanılan butonun pini
+int pedalyon=0; //pedal yonunu anlamak için kullanılan değişken
 int tur=0;  // tur değişkeni
 int vites=1; //vites değişekni
 int buton=0; // tur sayan butonun ilk halinini LOW kabul edilmesi için değiken ataması
@@ -32,7 +34,7 @@ int vart=0; //vites artırma butonunun ilk halinin LOW kabul edilmesi için değ
 int buta=0; // vites sınır butonunun ilk halinin LOW kabul edilmesi için değiken ataması
 int vtur[5] = {0,5,11,17,23};  // vites tur sınırları 
 int first=0; //vitesin bir kez başa çakilmesi için while kırma değişkeni
-#define reed 8//hall effect kontrol pini 
+#define reed 8//hall effect kontrol pini //unsigned char result;  // rotary kütüphanesinde kullanılan rotun yönünün tutulduğu değişken 
 
 float radius = 20.0;// teker inch'i  hız ölçülecek teker boyutu 20.00"
 float limit[8] = {0.00,8.00,8.01,15.00,15.01,22.00,22.01,30.00};  // vites hız sınırları 
@@ -45,11 +47,34 @@ int reedCounter; // hall efect sayacı
 
 
 void setup() {
- ///Serial.println("----------****************---------------");
- r.begin(true); // rotary kütüphanesinin hazırlanması
-//Serial.begin(9600); // seri habeleşmenin hazırlanması
-  lcd.init();   //lcd ekranın hazırlanması
+     aLastState = digitalRead(outputA);   
+  //  zamanlayıcı kesmesi reed anahtarının önceden belirlenmiş zamanlamalı ölçümlerine izin verilmesi
+  //daha fazla bilgi için  http://arduino.cc/playground/Code/Timer1
+  cli();//kesmeleri durdur
+  //timer1 i 1khz e ayarlama 
+  TCCR1A = 0;//  TCCR1A register ' ı 0 sıfıra eşitleniyor
+  TCCR1B = 0;// TCCR1b register ' ı 0 sıfıra eşitleniyor
+  TCNT1  = 0;
+  // 1 khz artışlar için zamanlayıcı sayısını ayarlama
+  OCR1A = 1999;  // = (1/1000) / ((1/(16*10^6))*8) - 1
+  //  CTC mod etkin 
+  TCCR1B |= (1 << WGM12);
+  // 8 ön ölçekleyici için CS11 bitini ayarlama
+  TCCR1B |= (1 << CS11);   
+  // zamanlayıcıyı etkinleştir ve kesmeyi karşılaştır
+  TIMSK1 |= (1 << OCIE1A);
+  sei();//kesmelere izin ver 
 
+  //zamanlayıcı ayarlama sonu
+  reedCounter = maxReedCounter; // hall effect sayacının minimum dönüş süresi ile eşitlenmesi
+  circumference = 2*3.14*radius; // teker çevresinin hesaplanması
+   pinMode (outputA,INPUT);
+   pinMode (outputB,INPUT);
+ ///Serial.println("----------****************---------------");
+
+Serial.begin(9600); // seri habeleşmenin hazırlanması
+  lcd.init();   //lcd ekranın hazırlanması
+lcd.backlight();
 /*
 bu kısımda kullanılan tüm
 pinmode (x,INPUT)---> giriş pini
@@ -72,6 +97,8 @@ butondur pini HIGH -1 olana dek motoru birinci vitese doğru çekmek için sol f
 döngüden çıkmak için first değişkeni 0 dan farklı bir değer alır ve void setup devam eder.
 
 */
+lcd.clear();
+lcd.print("Kaskınızı takmayı unutmayın!"); // bilgilendirme mesajı 
 buta = digitalRead(butondur);
 delay(1000);
 sol();
@@ -84,7 +111,7 @@ için kullanılmıştır.
 
 */ 
 lcd.clear();
-lcd.print("ANDARKAN V2"); // bilgilendirme mesajı 
+lcd.print("Pedallayınız"); // bilgilendirme mesajı 
 while (first==0){
  buta = digitalRead(butondur);
 if(buta==HIGH){
@@ -99,27 +126,6 @@ if(buta==HIGH){
 }
 
 
-  //  zamanlayıcı kesmesi reed anahtarının önceden belirlenmiş zamanlamalı ölçümlerine izin verilmesi
-  //daha fazla bilgi için  http://arduino.cc/playground/Code/Timer1
-  cli();//kesmeleri durdur
-  //timer1 i 1khz e ayarlama 
-  TCCR1A = 0;//  TCCR1A register ' ı 0 sıfıra eşitleniyor
-  TCCR1B = 0;// TCCR1b register ' ı 0 sıfıra eşitleniyor
-  TCNT1  = 0;
-  // 1 khz artışlar için zamanlayıcı sayısını ayarlama
-  OCR1A = 1999;  // = (1/1000) / ((1/(16*10^6))*8) - 1
-  //  CTC mod etkin 
-  TCCR1B |= (1 << WGM12);
-  // 8 ön ölçekleyici için CS11 bitini ayarlama
-  TCCR1B |= (1 << CS11);   
-  // zamanlayıcıyı etkinleştir ve kesmeyi karşılaştır
-  TIMSK1 |= (1 << OCIE1A);
-  sei();//kesmelere izin ver 
-
-  //zamanlayıcı ayarlama sonu
-  reedCounter = maxReedCounter; // hall effect sayacının minimum dönüş süresi ile eşitlenmesi
-  circumference = 2*3.14*radius; // teker çevresinin hesaplanması
-
 lcd.clear();
 }
 
@@ -130,8 +136,6 @@ ISR(TIMER1_COMPA_vect) {
   if (reedVal){//hall effect sensor 1 ise
     if (reedCounter == 0){//dönüş için maksimum süre tamamalnmış ise 
       hiz = (56.8*float(circumference))/float(timer);//hızı hesaplanıyor
-      lcd.setCursor(0, 0);
-        lcd.print(hiz);
       timer = 0;//timer değiikeni sıfırlanıyor
       reedCounter = maxReedCounter;//reedCount değeri sıfırlanıyor
     }
@@ -157,6 +161,12 @@ ISR(TIMER1_COMPA_vect) {
 
 
 void loop() {
+ // Serial.println("loop");
+  pedal();
+        lcd.setCursor(0, 0);
+        lcd.print("HIZ:");
+        lcd.setCursor(4,0);
+        lcd.print(hiz);
 //vites sınır kontrol bloğu başı 
  buta = digitalRead(butondur);// buta buta değişkeni vites sınır butonu ile ilişkilendiriliyor
 if(buta==HIGH){
@@ -167,17 +177,23 @@ if(buta==HIGH){
   tur=0; //tur hatası olmaması için tur sıfırlanıyor
 }
 //vites sınır kontrol bloğu sonu
- lcd.setCursor(0,1);
+lcd.setCursor(0, 1);
+ lcd.print("VITES:");
+ lcd.setCursor(6,1);
  lcd.print(vites  );
 //otomatik manuel mod değiştirme buton kontrolü için 12. pin değeri kontrol ediliyor
 if (digitalRead(oto)==1){ //eğer buton 1 ise otomatik mod etkin oluyor
   //Serial.println("hizal");
+    lcd.setCursor(13, 0); // lcd ekran imlecini sağa taşı
+  lcd.print("MOD");
   lcd.setCursor(15, 1); // lcd ekran imlecini sağa taşı
   lcd.print("O"); //lcd ekrana modun otomatik olduğunu belirten "O" harfinin yazılması 
   hizal(); // hıza bağlı vites değişimi için hizal fonksiyonu çalışıtırılıyot
   
   }
   else{// 12. pin 0 ise vites azaltma ve artırma tuşları kontrol ediliyor
+      lcd.setCursor(13, 0); // lcd ekran imlecini sağa taşı
+  lcd.print("MOD");
  lcd.setCursor(15, 1); // lcd ekran imlecini sağa taşı
   lcd.print("M"); //lcd ekrana modun manuel olduğunu belirten "M" harfinin yazılması 
  vart = digitalRead(vartb);
@@ -186,7 +202,6 @@ if(vart==1 and vites < 5){ // vites artırma tuşuna basılı ve vites 5 ten kü
  //  Serial.println("vart");
   delay(100); //ark için bekleme
   vites ++; //vites değişkeni artılıyor
- // Serial.println(vites);
    vitesbul(); //vites değiştirmek için vitesbul fonksiyonu çalıştırılıyor
 //butona basılı tutma ve ark önlemi başı
   while(vart == HIGH){
@@ -215,12 +230,13 @@ if(vaz==1 and vites>1){  //vites azaltma butonuna basılı ve vites 1 den büyü
 }
 //--------------------------------------------
 
-
 }
 
 void sag(){
     //Serial.println("sag");
   //motor hareket yönü belirlemek için dijital pin çıkışlarının tetiklenmesi başı   
+  pedal();
+  if (pedalyon==1){
   digitalWrite (ln3, HIGH);
   digitalWrite (ln4, LOW);
   //motor hareket yönü belirlemek için dijital pin çıkışlarının tetiklenmesi sonu
@@ -234,12 +250,14 @@ if(buton==1){ // tur sayma butonuna basılı ise
      buton = digitalRead(butonpin);
   }//butona basılı tutma ve ark önlemi sonu 
   delay(10);//buton kontrolü için küçük bekkletme
-}
+}}
 }
 
 void sol(){
+  pedal();
     //Serial.println("sol");
   //motor hareket yönü belirlemek için dijital pin çıkışlarının tetiklenmesi başı   
+  if (pedalyon==1){
   digitalWrite (ln4, HIGH);
   digitalWrite (ln3, LOW);
  //motor hareket yönü belirlemek için dijital pin çıkışlarının tetiklenmesi sonu
@@ -253,7 +271,7 @@ if(buton==1){ //tur sayma butonuna basılı ise
      buton = digitalRead(butonpin);
   }//butona basılı tutma ve ark önlemi sonu
  delay(10);//buton kontrolü için küçük bekkletme
-}
+}}
 }
 
 void dur(){
@@ -265,6 +283,7 @@ void dur(){
 }
 
 void hizal(){  
+  pedal();
 hiz=hiz;
 //   Serial.println("HIZ =");
 //  Serial.println(hiz);
@@ -325,6 +344,7 @@ vites değiştirme işlemi için vitesbul fonksiyonu çalıştırılmıştır.
 }
 
 void vitesbul(){
+ // Serial.println("vitesbul");
   /*
   bu kısımda 
   vites değişeni kontrol edilerek motorun hangi vites için hareket edeceği belirlenmektedir
@@ -335,10 +355,11 @@ void vitesbul(){
   */
   
 if(vites==1){ 
-  if(tur<vtur[0] and pedal()==true){
+
+  if(tur<vtur[0] ){
     sag();
   }
-  else if(tur>vtur[0] and pedal()==true){
+  else if(tur>vtur[0] ){
     sol(); 
   }
   else{
@@ -348,10 +369,12 @@ if(vites==1){
 }
 //-----------------------
 if(vites==2){
-  if(tur<vtur[1] and pedal()==true){
+
+  if(tur<vtur[1] ){
     sag();
   }
-  else if(tur>vtur[1] and pedal()==true){
+    
+  else if(tur>vtur[1] ){
     sol(); 
   }
   else{
@@ -361,10 +384,12 @@ if(vites==2){
 }
 //-----------------------
 if(vites==3){
-  if(tur<vtur[2] and pedal()==true){
+
+  if(tur<vtur[2]){
     sag();
   }
-  else if(tur>vtur[2] and pedal()==true){
+   
+  else if(tur>vtur[2]){
     sol(); 
   }
   else{
@@ -374,10 +399,12 @@ if(vites==3){
 }
 //------------------------
 if(vites==4){
-  if(tur<vtur[3] and pedal()==true){
+
+  if(tur<vtur[3] ){
     sag();
   }
-  else if(tur>vtur[3] and pedal()==true){
+   
+  else if(tur>vtur[3]){
     sol(); 
   }
   else{
@@ -387,10 +414,12 @@ if(vites==4){
 }
 //------------------------
 if(vites==5){
-  if(tur<vtur[4] and pedal()==true){
+
+  if(tur<vtur[4] ){
     sag();
   }
-  else if(tur>vtur[4] and pedal()==true){
+    
+  else if(tur>vtur[4]){
     sol(); 
   }
   else{
@@ -402,18 +431,33 @@ if(vites==5){
 
   }
   
-boolean pedal(){
+void pedal(){
+  /*
+  bu kısımda 
+  aState ile okunan rotary encoderın birinci bacağı ile ikinci bacağı arasındaki fark karşılaşttırılarak sağa yada sola döndüğü anlaşılabilir
+  
+  döngünün 10 kez çalıştırılma sebebi değer okuma işleminin maksimum pedal çevirme hızından kat kat yüksek olması 
+  10 kez çevirerek daha kararlı bir sonuç elde edilebiliyor.
+  
+  */
+  
+  
+  for(int i=0;i=10;i++){ 
+  // Serial.println("pedal");
+   aState = digitalRead(outputA); // şimdiki değeri 1. pinden oku
+   // şimdiki durum ile önceki durum farklı ise rot saat yönünde dönmüyor demektir.
+   if (aState != aLastState){     
+     // eğer şimdiki durum ile önceki durum aynı ise , rotary encoder saat yönünde dönüyor demektir
+     if (digitalRead(outputB) != aState) { 
+       pedalyon=1;
+     } else {
+       pedalyon=0;
+     }
 
- result = r.process(); // kütüphane fonksiyonu çalıştıılıyor
-  if (result) { // result değişkeninin değeri kontrol ediliyor
-    //Serial.println("true");
-    return true;// rotary encoder eğer saat yönünde dönüyor ise fonksiyonda true değerini döndür
-  }
- else { 
-// Serial.println("false");
-return false; // rotary encoder eğer saat yönünde dönmüyor ise false değerini döndür
- }
+   }
+     //Serial.println(pedalyon);
+   aLastState = aState; // şimdiki durumu önceki durum olarak ata
+ }}
 
-}
 
 
