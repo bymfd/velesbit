@@ -12,13 +12,12 @@ LCD :https://github.com/johnrickman/LiquidCrystal_I2C
 LiquidCrystal_I2C lcd(0x27, 16, 2); // lcd ekran adreslenmesi ve boyutlarının belirlenmesi
 
 #include <Rotary.h> // Rotary encoder ile pedal yönü kontrolü için gerekli kütüphane içe aktarılıyor
-
 Rotary r = Rotary(2, 3); // rotary nesnesi oluşturulup 2 ve 3. pinlerin kontrol edileceği belirtiliyor
 int oto=12; // otomatik manuel mod değişimi sağlayan buton pini
 int pedal=0;
 int ln3 =6; // l298n sürücüsü için kullanılan pinlerin belirlenmesi
 int ln4 =5; //l298n sürücüsü için kullanılan pinlerin belirlenmesi
-
+int p=0;
 const int butondur =11; // vites sınır butonunun pini
 const int butonpin =7; // tur sayma için kullanılan butonun pini
 const int vazb =9; // vites azaltma için kullanılan pini
@@ -154,11 +153,13 @@ ISR(TIMER1_COMPA_vect) {
   else{
     timer += 1;//timer değerini azalt
   }
-
+     
   unsigned char result = r.process();
   if (result) {
     pedal=(result == DIR_CW ? 1 : 0);
-  }
+
+}
+
 
 
 }
@@ -176,6 +177,12 @@ void loop() {
         lcd.setCursor(4,0);
         lcd.print(hiz);
         Serial.print("*************pedal :");
+if(pedal==1){
+  p++;
+if(p>=4){
+p=0;
+pedal=0;
+}}
 Serial.println(pedal);
 //vites sınır kontrol bloğu başı 
  buta = digitalRead(butondur);// buta buta değişkeni vites sınır butonu ile ilişkilendiriliyor
