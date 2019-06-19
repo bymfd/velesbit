@@ -12,11 +12,13 @@ LCD :https://github.com/johnrickman/LiquidCrystal_I2C
 LiquidCrystal_I2C lcd(0x27, 16, 2); // lcd ekran adreslenmesi ve boyutlarının belirlenmesi
 
 #include <Rotary.h> // Rotary encoder ile pedal yönü kontrolü için gerekli kütüphane içe aktarılıyor
+
 Rotary r = Rotary(2, 3); // rotary nesnesi oluşturulup 2 ve 3. pinlerin kontrol edileceği belirtiliyor
 int oto=12; // otomatik manuel mod değişimi sağlayan buton pini
+int pedal=0;
 int ln3 =6; // l298n sürücüsü için kullanılan pinlerin belirlenmesi
 int ln4 =5; //l298n sürücüsü için kullanılan pinlerin belirlenmesi
-unsigned char result;  // rotary kütüphanesinde kullanılan rotun yönünün tutulduğu değişken 
+
 const int butondur =11; // vites sınır butonunun pini
 const int butonpin =7; // tur sayma için kullanılan butonun pini
 const int vazb =9; // vites azaltma için kullanılan pini
@@ -42,11 +44,13 @@ int reedCounter; // hall efect sayacı
 
 
 void setup() {
- ///Serial.println("----------****************---------------");
- r.begin(true); // rotary kütüphanesinin hazırlanması
-//Serial.begin(9600); // seri habeleşmenin hazırlanması
+Serial.begin(9600); // seri habeleşmenin hazırlanması
+Serial.println("----------********DURDUR********---------------");
+  r.begin(true); // rotary kütüphanesinin hazırlanması
   lcd.init();   //lcd ekranın hazırlanması
   lcd.backlight();
+  lcd.clear();
+lcd.print("Pedallayin"); // bilgilendirme mesajı 
 /*
 bu kısımda kullanılan tüm
 pinmode (x,INPUT)---> giriş pini
@@ -97,6 +101,10 @@ if(buta==HIGH){
   //daha fazla bilgi için  http://arduino.cc/playground/Code/Timer1
   cli();//kesmeleri durdur
   //timer1 i 1khz e ayarlama 
+
+  
+  
+  
   TCCR1A = 0;//  TCCR1A register ' ı 0 sıfıra eşitleniyor
   TCCR1B = 0;// TCCR1b register ' ı 0 sıfıra eşitleniyor
   TCNT1  = 0;
@@ -140,20 +148,35 @@ ISR(TIMER1_COMPA_vect) {
     }
   }
   if (timer > 2000){
-    hiz = 0;//Hall effect sensor hiç timer değeri 2000 olana dek hiç tetiklenmemişse hiz 0 a eşitle
+    hiz = 0.00;//Hall effect sensor hiç timer değeri 2000 olana dek hiç tetiklenmemişse hiz 0 a eşitle
+   // pedal=0;
   }
   else{
     timer += 1;//timer değerini azalt
   }
 
+  unsigned char result = r.process();
+  if (result) {
+    pedal=(result == DIR_CW ? 1 : 0);
+  }
+
+
 }
 
 
 void loop() {
+
+  Serial.print("VITES: ");
+  Serial.println(vites);
+  Serial.print("HIZ: ");
+  Serial.println(hiz);
+
           lcd.setCursor(0, 0);
         lcd.print("HIZ:");
         lcd.setCursor(4,0);
         lcd.print(hiz);
+        Serial.print("*************pedal :");
+Serial.println(pedal);
 //vites sınır kontrol bloğu başı 
  buta = digitalRead(butondur);// buta buta değişkeni vites sınır butonu ile ilişkilendiriliyor
 if(buta==HIGH){
@@ -165,9 +188,11 @@ if(buta==HIGH){
 }
 //vites sınır kontrol bloğu sonu
 
+   
+
 //otomatik manuel mod değiştirme buton kontrolü için 12. pin değeri kontrol ediliyor
 if (digitalRead(oto)==1){ //eğer buton 1 ise otomatik mod etkin oluyor
-  //Serial.println("hizal");
+  Serial.println("OTO");
      lcd.setCursor(13, 0); // lcd ekran imlecini sağa taşı
   lcd.print("MOD");
   lcd.setCursor(15, 1); // lcd ekran imlecini sağa taşı
@@ -176,6 +201,7 @@ if (digitalRead(oto)==1){ //eğer buton 1 ise otomatik mod etkin oluyor
   
   }
   else{// 12. pin 0 ise vites azaltma ve artırma tuşları kontrol ediliyor
+  Serial.println("MANUEL");
    lcd.setCursor(13, 0); // lcd ekran imlecini sağa taşı
   lcd.print("MOD");
  lcd.setCursor(15, 1); // lcd ekran imlecini sağa taşı
@@ -229,7 +255,8 @@ void sag(){
 if(buton==1){ // tur sayma butonuna basılı ise 
  delay(10); //ark önlemi 
  tur ++;// tur 1 arttırılıyor
-   //Serial.println(tur);
+     Serial.print("TUR: ");
+  Serial.println(tur);
 //butona basılı tutma ve ark önlemi başı
   while(buton == HIGH){
      buton = digitalRead(butonpin);
@@ -248,7 +275,8 @@ void sol(){
 if(buton==1){ //tur sayma butonuna basılı ise 
  delay(10);//ark önlemi
  tur --; // tur  1 azaltılıyor
-   //Serial.println(tur);
+     Serial.print("TUR: ");
+  Serial.println(tur);
    //butona basılı tutma ve ark önlemi başı
   while(buton == HIGH){
      buton = digitalRead(butonpin);
@@ -338,10 +366,10 @@ void vitesbul(){
   */
   
 if(vites==1){ 
-  if(tur<vtur[0] and pedal()==true){
+  if(tur<vtur[0] and pedal==1){
     sag();
   }
-  else if(tur>vtur[0] and pedal()==true){
+  else if(tur>vtur[0] and pedal==1){
     sol(); 
   }
   else{
@@ -351,10 +379,10 @@ if(vites==1){
 }
 //-----------------------
 if(vites==2){
-  if(tur<vtur[1] and pedal()==true){
+  if(tur<vtur[1] and pedal==1){
     sag();
   }
-  else if(tur>vtur[1] and pedal()==true){
+  else if(tur>vtur[1] and pedal==1){
     sol(); 
   }
   else{
@@ -364,10 +392,10 @@ if(vites==2){
 }
 //-----------------------
 if(vites==3){
-  if(tur<vtur[2] and pedal()==true){
+  if(tur<vtur[2] and pedal==1){
     sag();
   }
-  else if(tur>vtur[2] and pedal()==true){
+  else if(tur>vtur[2] and pedal==1){
     sol(); 
   }
   else{
@@ -377,10 +405,10 @@ if(vites==3){
 }
 //------------------------
 if(vites==4){
-  if(tur<vtur[3] and pedal()==true){
+  if(tur<vtur[3] and pedal==1){
     sag();
   }
-  else if(tur>vtur[3] and pedal()==true){
+  else if(tur>vtur[3] and pedal==1){
     sol(); 
   }
   else{
@@ -390,10 +418,10 @@ if(vites==4){
 }
 //------------------------
 if(vites==5){
-  if(tur<vtur[4] and pedal()==true){
+    if(tur<vtur[4] and pedal==1){
     sag();
   }
-  else if(tur>vtur[4] and pedal()==true){
+  else if(tur>vtur[4] and pedal==1){
     sol(); 
   }
   else{
@@ -405,24 +433,7 @@ if(vites==5){
 
   }
   
-boolean pedal(){
-
-// result = r.process(); // kütüphane fonksiyonu çalıştıılıyor
-//  if (result) { // result değişkeninin değeri kontrol ediliyor
-//    //Serial.println("true");
-// result = r.process(); // kütüphane fonksiyonu çalıştıılıyor
-//  if (result) { // result değişkeninin değeri kontrol ediliyor
-//    //Serial.println("true");
-    return true;// rotary encoder eğer saat yönünde dönüyor ise fonksiyonda true değerini döndür
-//  }
-// else { 
-//// Serial.println("false");
-//return false; // rotary encoder eğer saat yönünde dönmüyor ise false değerini döndür
-// }    return true;// rotary encoder eğer saat yönünde dönüyor ise fonksiyonda true değerini döndür
-//  }
-// else { 
-//// Serial.println("false");
-//return false; // rotary encoder eğer saat yönünde dönmüyor ise false değerini döndür
-// }
+boolean pedali(){
+//
 
 }
