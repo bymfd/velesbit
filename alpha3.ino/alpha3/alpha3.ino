@@ -23,7 +23,7 @@ const int butonpin =7; // tur sayma için kullanılan butonun pini
 const int vazb =9; // vites azaltma için kullanılan pini
 const int vartb =4; // vites artırma için kullanılan butonun pini
 int tur=0;  // tur değişkeni
-int vites=1; //vites değişekni
+int vites=0; //vites değişekni
 int buton=0; // tur sayan butonun ilk halinini LOW kabul edilmesi için değiken ataması
 int vaz=0; // vites azaltma butonunun ilk halininin LOW kabul edilmesi için değişken ataması
 int vart=0; //vites artırma butonunun ilk halinin LOW kabul edilmesi için değişken ataması
@@ -72,7 +72,7 @@ döngüden çıkmak için first değişkeni 0 dan farklı bir değer alır ve vo
 */
 buta = digitalRead(butondur);
 delay(1000);
-sol();
+
 /* 
 kullanılan tüm
 lcd.clear();---> lcd ekranda yazan herşeyi silmek 
@@ -82,28 +82,12 @@ için kullanılmıştır.
 */ 
 lcd.clear();
 lcd.print("Pedallayin"); // bilgilendirme mesajı 
-while (first==0){
- buta = digitalRead(butondur);
-if(buta==HIGH){
-  dur();
-    vites=1;
-  sag();
-  delay(200);
-  dur();
-  tur=0;
-  first=1;
-}
-}
 
 
   //  zamanlayıcı kesmesi reed anahtarının önceden belirlenmiş zamanlamalı ölçümlerine izin verilmesi
   //daha fazla bilgi için  http://arduino.cc/playground/Code/Timer1
   cli();//kesmeleri durdur
-  //timer1 i 1khz e ayarlama 
-
-  
-  
-  
+  //timer1 i 1khz e ayarlama
   TCCR1A = 0;//  TCCR1A register ' ı 0 sıfıra eşitleniyor
   TCCR1B = 0;// TCCR1b register ' ı 0 sıfıra eşitleniyor
   TCNT1  = 0;
@@ -120,6 +104,31 @@ if(buta==HIGH){
   //zamanlayıcı ayarlama sonu
   reedCounter = maxReedCounter; // hall effect sayacının minimum dönüş süresi ile eşitlenmesi
   circumference = 2*3.14*radius; // teker çevresinin hesaplanması
+
+while (first==0){
+ Serial.print("pedal : ");
+  //Serial.println(pedal);
+  if(pedal==1){
+  p++;
+  sol();
+if(p>=4){
+p=0;
+pedal=0;
+dur();
+}
+}
+ 
+ buta = digitalRead(butondur);
+if(buta==HIGH){
+  dur();
+    vites=1;
+  sag();
+  delay(200);
+  dur();
+  tur=0;
+  first=1;
+}
+}
 
 lcd.clear();
 }
@@ -253,6 +262,7 @@ else {vitesbul();}
 }
 
 void sag(){
+ 
     //Serial.println("sag");
   //motor hareket yönü belirlemek için dijital pin çıkışlarının tetiklenmesi başı   
   digitalWrite (ln3, HIGH);
@@ -273,6 +283,7 @@ if(buton==1){ // tur sayma butonuna basılı ise
 }
 
 void sol(){
+ 
     //Serial.println("sol");
   //motor hareket yönü belirlemek için dijital pin çıkışlarının tetiklenmesi başı   
   digitalWrite (ln4, HIGH);
@@ -371,6 +382,22 @@ void vitesbul(){
   eğer tur değişkeni vtur listesi içindeki değerden büyük ise vites azaltılmalı yani sol fonksiyonu çalıştırılmalıdır
   eğer tur vtur içindeki hiçbir değere uymuyorsa yada pedal doğru yönde hareket etmiyorsa dur fonksiyonu ile işlem kesilmiş olur  
   */
+  if(vites==0 and pedal==1){ 
+
+     sol(); 
+}
+  else{
+    dur();
+  if(vites==0 and pedal==1){ 
+
+     sol(); 
+}
+  else{
+    dur();
+
+  }
+  }
+  
   
 if(vites==1){ 
   if(tur<vtur[0] and pedal==1){
