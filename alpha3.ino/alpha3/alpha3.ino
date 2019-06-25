@@ -9,18 +9,18 @@ LCD :https://github.com/johnrickman/LiquidCrystal_I2C
 */
 #include <Wire.h>  // I2C için gerekli kütüphane içe aktarma
 #include <LiquidCrystal_I2C.h> // lcd ekran için gerekli kütüphane içe aktarma
-LiquidCrystal_I2C lcd(0x27, 16, 2); // lcd ekran adreslenmesi ve boyutlarının belirlenmesi
+LiquidCrystal_I2C lcd(0x3F, 16, 2); // lcd ekran adreslenmesi ve boyutlarının belirlenmesi
 
 #include <Rotary.h> // Rotary encoder ile pedal yönü kontrolü için gerekli kütüphane içe aktarılıyor
-Rotary r = Rotary(2, 3); // rotary nesnesi oluşturulup 2 ve 3. pinlerin kontrol edileceği belirtiliyor
+Rotary r = Rotary(3,2 ); // rotary nesnesi oluşturulup 2 ve 3. pinlerin kontrol edileceği belirtiliyor
 int oto=12; // otomatik manuel mod değişimi sağlayan buton pini
 int pedal=0;
-int ln3 =6; // l298n sürücüsü için kullanılan pinlerin belirlenmesi
-int ln4 =5; //l298n sürücüsü için kullanılan pinlerin belirlenmesi
+int ln3 =5; // l298n sürücüsü için kullanılan pinlerin belirlenmesi
+int ln4 =6; //l298n sürücüsü için kullanılan pinlerin belirlenmesi
 int p=0;
 const int butondur =11; // vites sınır butonunun pini
 const int butonpin =7; // tur sayma için kullanılan butonun pini
-const int vazb =9; // vites azaltma için kullanılan pini
+const int vazb =10; // vites azaltma için kullanılan pini
 const int vartb =4; // vites artırma için kullanılan butonun pini
 int tur=0;  // tur değişkeni
 int vites=0; //vites değişekni
@@ -106,7 +106,7 @@ lcd.print("Pedallayin"); // bilgilendirme mesajı
   circumference = 2*3.14*radius; // teker çevresinin hesaplanması
 
 while (first==0){
- Serial.print("pedal : ");
+ Serial.println("pedal : ");
   //Serial.println(pedal);
   if(pedal==1){
   p++;
@@ -166,7 +166,6 @@ ISR(TIMER1_COMPA_vect) {
   unsigned char result = r.process();
   if (result) {
     pedal=(result == DIR_CW ? 1 : 0);
-
 }
 
 
@@ -293,7 +292,7 @@ void sol(){
 if(buton==1){ //tur sayma butonuna basılı ise 
  delay(10);//ark önlemi
  tur --; // tur  1 azaltılıyor
-     Serial.print("TUR: ");
+     Serial.print("TUR: ////////////////*777777777777777777777777777777777777777777777777777777777777");
   Serial.println(tur);
    //butona basılı tutma ve ark önlemi başı
   while(buton == HIGH){
@@ -317,6 +316,8 @@ void dur(){
 
 void hizal(){  
 hiz=hiz;
+//delay(500);
+//hiz=hiz;
 //   Serial.println("HIZ =");
 //  Serial.println(hiz);
 //     Serial.print("vites =");
@@ -388,14 +389,7 @@ void vitesbul(){
 }
   else{
     dur();
-  if(vites==0 and pedal==1){ 
 
-     sol(); 
-}
-  else{
-    dur();
-
-  }
   }
   
   
@@ -467,7 +461,3 @@ if(vites==5){
 
   }
   
-boolean pedali(){
-//
-
-}
