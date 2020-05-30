@@ -6,4 +6,6 @@ alpha 6 ---> 0.96" oled screen
 
 
 Details avaible on here:
+https://bymfd.github.io/tech/2020/04/09/otomatik-vitesli-bisiklet/#/
+
 https://hackaday.io/project/166291-automatic-transmission-system-for-bicycles
